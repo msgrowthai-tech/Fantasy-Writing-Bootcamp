@@ -70,7 +70,75 @@ const nav = [
 function Badge({ children, tone = "green" }) {
   return <span className={"badge " + tone}>{children}</span>;
 }
+function SignIn({ onSignedIn }) {
+  const [email, setEmail] = useState(""),
+    [password, setPassword] = useState(""),
+    [error, setError] = useState(""),
+    [busy, setBusy] = useState(false);
+  const submit = async (e) => {
+    e.preventDefault();
+    setBusy(true);
+    setError("");
+    try {
+      const r = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const result = await r.json();
+      if (!r.ok) throw Error(result.error);
+      setPassword("");
+      onSignedIn();
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="loading">
+      <form className="loginCard" onSubmit={submit}>
+        <div className="brandIcon">
+          <BookOpen />
+        </div>
+        <div className="eyebrow">FANTASY WRITING BOOTCAMP</div>
+        <h1>Your command center.</h1>
+        <p>Sign in to your private business workspace.</p>
+        <label>
+          Work email
+          <input
+            type="email"
+            autoComplete="username"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+        </label>
+        <label>
+          Password
+          <input
+            type="password"
+            autoComplete="current-password"
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+        </label>
+        {error && <p role="alert">{error}</p>}
+        <button className="button" type="submit" disabled={busy}>
+          {busy ? "Signing in…" : "Sign in"}
+          <ArrowRight size={16} />
+        </button>
+        <small>
+          Access is restricted to authorized staff. Contact your workspace
+          administrator for account access.
+        </small>
+      </form>
+    </div>
+  );
+}
 function App() {
+  const [needsLogin, setNeedsLogin] = useState(false);
   const [data, setData] = useState(null),
     [error, setError] = useState(""),
     [page, setPage] = useState("Overview"),
@@ -85,6 +153,11 @@ function App() {
     setError("");
     fetch("/api/dashboard")
       .then((r) => {
+        if (r.status === 401) {
+          setNeedsLogin(true);
+          setData(null);
+          return null;
+        }
         if (!r.ok)
           throw Error(
             "Unable to load the imported data. Check the API server and workbook import.",
@@ -95,6 +168,15 @@ function App() {
       .catch((e) => setError(e.message));
   };
   useEffect(load, []);
+  if (needsLogin)
+    return (
+      <SignIn
+        onSignedIn={() => {
+          setNeedsLogin(false);
+          load();
+        }}
+      />
+    );
   if (!data)
     return (
       <div className="loading">
@@ -379,6 +461,16 @@ function App() {
             <span className="snapshotDot" /> Imported snapshot{" "}
             <span className="divider" /> <span>USD</span>
             <div className="tinyAvatar">JH</div>
+            <button
+              aria-label="Sign out"
+              onClick={async () => {
+                await fetch("/api/logout", { method: "POST" });
+                setData(null);
+                setNeedsLogin(true);
+              }}
+            >
+              <LogOut size={16} />
+            </button>
           </div>
         </header>
         <div className="content">

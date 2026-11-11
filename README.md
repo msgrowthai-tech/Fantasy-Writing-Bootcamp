@@ -28,7 +28,7 @@ All populated rows, cached formula values, formulas, source row numbers, and wor
 
 ## Connect Supabase
 
-Project: `tmqzvavoknokdydgskew`. No remote migration or seed has been executed yet.
+Project: `tmqzvavoknokdydgskew`. Migrations and the initial seed have been applied; remote row counts and financial totals were verified.
 
 1. Apply both SQL files in `supabase/migrations/` in order through your authorized Supabase SQL editor or CLI. They create additive tables and deny anon/authenticated access. Existing source spreadsheets are untouched.
 2. Configure server-only `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` securely, via cloud environment settings or an ignored `.env` file. Never use a `VITE_` prefix for the service key.
@@ -52,6 +52,6 @@ Finance tests require the original private import. Browser smoke exercises all s
 
 Six functional pages: overview, transactions, sales & commissions, coaching & payouts, leads & marketing, and data & reconciliation. Date filtering, custom dates, payment search/detail, CSV export, source provenance, exception review, and roster-based compensation forecasts are implemented. Coaching and commission historical balances are clearly labeled lifetime and remain independent of the page date selector.
 
-No public deployment, staff authentication, webhook ingestion, payments execution, live Google Drive sync, weekly automated reports, or AI assistant is enabled. Keep this demo private until staff authentication, roles, tenant scoping, and webhook validation are implemented. The service role bypasses RLS and must remain on a trusted server. Do not expose this unauthenticated server to the public Internet.
+Staff authentication is implemented; the authorized staff account still needs provisioning. No public deployment, webhook ingestion, payments execution, live Google Drive sync, weekly automated reports, or AI assistant is enabled. See [deployment instructions](docs/deployment.md) for Bluehost, domain setup, staff account provisioning, and required production settings. Keep the local presentation private; production requires verified authentication and TLS. The service role bypasses RLS and must remain on a trusted server. Production mode and non-loopback binding require staff authentication automatically. Local loopback presentation mode permits unauthenticated access unless AUTH_REQUIRED=true.
 
 See [data audit](docs/data-audit.md) for definitions, source limitations, and migration strategy. Cloud tasks use the existing isolated checkout; do not create worktrees unless requested.

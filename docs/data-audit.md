@@ -49,7 +49,7 @@ Supabase migrations establish raw snapshots and source_records plus typed studen
 ## Synchronization strategy / phases
 
 1. Presentation: validated read-only snapshot and exceptions (implemented locally).
-2. Authorized Supabase migration/seed, verify remote counts/totals, then restart reporting API (pending access).
+2. Authorized Supabase migration/seed, verify remote counts/totals, then restart reporting API (completed and verified for the initial import).
 3. Staff authentication and executive/admin roles; append-only audit history and transactionally versioned import activation before public hosting or financial editing.
 4. Commas/bank ingestion through trusted server/n8n: verify provider signatures, native event IDs, replay protection, event inbox, unique provider transaction keys, retries, dead-letter review. Notifications only to channels explicitly configured by the operator. Never sum Transactions and Payments as two separate cash streams.
 5. Reconcile provider gross/fees/net, manual IDs, bank settlements and disbursements. Link payer to enrollment with explicit approval where ambiguous. Version rates and eligibility, approve payouts separately from calculations.

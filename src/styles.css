@@ -1276,3 +1276,58 @@ footer > span:first-child {
     font-size: 9px;
   }
 }
+.loginCard {
+  padding: 38px;
+  background: #faf7f4;
+  border: 1px solid #e3d5c5;
+  border-radius: 14px;
+  width: min(440px, 92vw);
+  box-shadow: 0 12px 45px #47352808;
+}
+.loginCard .brandIcon {
+  margin-bottom: 25px;
+}
+.loginCard .eyebrow {
+  margin-bottom: 14px;
+}
+.loginCard h1 {
+  font-size: 25px;
+}
+.loginCard > p {
+  font-size: 12px;
+  line-height: 1.8;
+  margin-bottom: 25px;
+}
+.loginCard label {
+  display: block;
+  font-size: 11px;
+  margin-top: 18px;
+}
+.loginCard input {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #dacaba;
+  background: #fffdf9;
+  border-radius: 6px;
+  margin-top: 8px;
+}
+.loginCard > .button {
+  margin: 23px 0;
+  background: #a97158;
+  color: white;
+  padding: 12px;
+  width: 100%;
+  justify-content: space-between;
+  font-size: 12px;
+}
+.loginCard small {
+  display: block;
+  color: #a08b76;
+  font-size: 10px;
+  line-height: 1.8;
+}
+.loginCard [role="alert"] {
+  color: #994b32;
+  margin-bottom: 0;
+}

@@ -8,7 +8,7 @@ const browser = await chromium.launch({
 const page = await browser.newPage({ viewport: { width: 1440, height: 1100 } });
 const errors = [];
 page.on("pageerror", (e) => errors.push(e.message));
-await page.goto("http://127.0.0.1:3001");
+await page.goto(process.env.BASE_URL || "http://127.0.0.1:3001");
 await page
   .getByRole("heading", { name: "A clearer view of your business." })
   .waitFor();

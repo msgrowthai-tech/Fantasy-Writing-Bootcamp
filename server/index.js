@@ -1,6 +1,7 @@
 import express from "express";
 import fs from "node:fs/promises";
 import { createClient } from "@supabase/supabase-js";
+import { installAuth } from "./auth.js";
 import { makeModel, coachAccrual } from "./model.js";
 const app = express();
 app.disable("x-powered-by");
@@ -17,6 +18,18 @@ const db =
         { auth: { persistSession: false } },
       )
     : null;
+const required =
+  process.env.AUTH_REQUIRED === "true" ||
+  process.env.NODE_ENV === "production" ||
+  !["127.0.0.1", "localhost", "::1"].includes(process.env.HOST || "127.0.0.1");
+app.use(express.json({ limit: "4kb" }));
+app.get("/healthz", (req, res) => res.json({ ok: true }));
+installAuth(app, {
+  db,
+  required,
+  allowlist: process.env.STAFF_EMAILS || "simon@jedherne.com",
+  secure: process.env.NODE_ENV === "production",
+});
 app.get("/api/dashboard", async (req, res) => {
   try {
     let source;
@@ -46,12 +59,10 @@ app.get("/api/dashboard", async (req, res) => {
     res.json(model);
   } catch (e) {
     console.error("Data load failed:", e.message);
-    res
-      .status(503)
-      .json({
-        error:
-          "Source data unavailable. Import workbooks or check the Supabase connection.",
-      });
+    res.status(503).json({
+      error:
+        "Source data unavailable. Import workbooks or check the Supabase connection.",
+    });
   }
 });
 app.use(express.static("dist"));
