@@ -12,7 +12,7 @@ create table if not exists public.source_records (
  source_kind text not null,
  sheet text not null,
  row_number integer not null,
- values jsonb not null,
+ "values" jsonb not null,
  formulas jsonb not null default '{}',
  primary key(snapshot_id, source_kind, sheet, row_number)
 );
