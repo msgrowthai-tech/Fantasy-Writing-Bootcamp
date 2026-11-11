@@ -5,11 +5,19 @@ import { installAuth } from "../server/auth.js";
 async function fixture(run) {
   const app = express();
   app.use(express.json());
+  const updates = [];
   const db = {
     auth: {
+      admin: {
+        updateUserById: async (id, change) => {
+          updates.push({ id, change });
+          return { data: { user: { id } }, error: null };
+        },
+      },
       getUser: async (token) => ({
         data: {
           user: {
+            id: token === "allowed" ? "staff-id" : "student-id",
             email:
               token === "allowed"
                 ? "simon@jedherne.com"
@@ -31,7 +39,7 @@ async function fixture(run) {
   const server = app.listen(0, "127.0.0.1");
   await new Promise((r) => server.once("listening", r));
   try {
-    await run(`http://127.0.0.1:${server.address().port}`);
+    await run(`http://127.0.0.1:${server.address().port}`, updates);
   } finally {
     server.closeAllConnections();
     await new Promise((r) => server.close(r));
@@ -78,4 +86,42 @@ test("logout clears HttpOnly Secure session cookie", async () =>
     assert.equal(r.status, 200);
     for (const part of ["HttpOnly", "Secure", "SameSite=Strict", "Max-Age=0"])
       assert.ok(r.headers.get("set-cookie").includes(part));
+  }));
+
+test("password setup requires a verified staff token", async () =>
+  fixture(async (base, updates) => {
+    for (const accessToken of ["", "student"]) {
+      const r = await fetch(base + "/api/account/password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ accessToken, password: "a-long-test-password" }),
+      });
+      assert.equal(r.status, 401);
+    }
+    assert.equal(updates.length, 0);
+  }));
+test("password setup targets verified identity, never request user ID", async () =>
+  fixture(async (base, updates) => {
+    const r = await fetch(base + "/api/account/password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        accessToken: "allowed",
+        password: "a-long-test-password",
+        userId: "attacker-target",
+      }),
+    });
+    assert.equal(r.status, 200);
+    assert.equal(updates.length, 1);
+    assert.equal(updates[0].id, "staff-id");
+  }));
+test("password setup rejects short passwords before writing", async () =>
+  fixture(async (base, updates) => {
+    const r = await fetch(base + "/api/account/password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ accessToken: "allowed", password: "short" }),
+    });
+    assert.equal(r.status, 400);
+    assert.equal(updates.length, 0);
   }));

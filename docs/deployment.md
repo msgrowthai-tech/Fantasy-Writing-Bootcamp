@@ -43,3 +43,13 @@ The server starts with Node's `--use-env-proxy` option so inherited cloud HTTPS 
 5. Verify HTTPS loads the sign-in page, unauthenticated `/api/dashboard` returns 401, Simon can sign in, unrelated users cannot, and data says Supabase. Check logout and session expiration.
 
 Do not consider deployment finished until DNS, TLS, and a real authorized staff login are verified. No DNS change or public deployment has been made in this session.
+
+## Invitation redirect correction
+
+Simon’s invitation was accepted and the email confirmed, but Supabase redirected to its default localhost Site URL. The dashboard now implements `/auth/callback` for standard Supabase invitation/recovery hash links. It removes the token from the visible URL immediately and keeps it only in memory. Its password-setup endpoint verifies the token with Supabase and enforces the staff allowlist before updating that user's password. It never accepts a caller-supplied user ID. Successful setup returns the user to normal password sign-in.
+
+After the site is live, set Supabase Authentication → URL Configuration:
+- Site URL: `https://dashboard.jedherne.com`
+- Redirect URL: `https://dashboard.jedherne.com/auth/callback`
+
+Use the callback URL as the redirect destination for a fresh account recovery/reset email. Invitation links are single-use; the previously consumed link may not work again. Configure invitation/recovery redirects in the Supabase dashboard rather than pasting token-bearing URLs into chat. These settings have not been changed by the app code. A real invited-user/password round trip still requires the deployed callback and a fresh link.

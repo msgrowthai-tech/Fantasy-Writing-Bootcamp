@@ -137,7 +137,123 @@ function SignIn({ onSignedIn }) {
     </div>
   );
 }
+function readAccountCallback() {
+  const params = new URLSearchParams(window.location.hash.slice(1));
+  const token = params.get("access_token"),
+    type = params.get("type");
+  if (token || params.has("error")) {
+    window.history.replaceState(
+      null,
+      "",
+      window.location.pathname + window.location.search,
+    );
+    if (token && ["invite", "recovery"].includes(type)) return { token };
+    return {
+      error:
+        "This setup link is invalid or expired. Request a fresh password reset link after the dashboard is live.",
+    };
+  }
+  if (window.location.pathname === "/auth/callback")
+    return {
+      error:
+        "No account setup token was found. Open a fresh invitation or password reset link.",
+    };
+  return null;
+}
+function AccountSetup({ callback, onDone }) {
+  const [password, setPassword] = useState(""),
+    [confirm, setConfirm] = useState(""),
+    [error, setError] = useState(callback.error || ""),
+    [busy, setBusy] = useState(false),
+    [done, setDone] = useState(false);
+  const submit = async (e) => {
+    e.preventDefault();
+    if (password !== confirm) {
+      setError("The passwords do not match.");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    try {
+      const r = await fetch("/api/account/password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ accessToken: callback.token, password }),
+      });
+      const result = await r.json();
+      if (!r.ok) throw Error(result.error);
+      setPassword("");
+      setConfirm("");
+      setDone(true);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="loading">
+      <form className="loginCard" onSubmit={submit}>
+        <div className="brandIcon">
+          <BookOpen />
+        </div>
+        <div className="eyebrow">YOUR PRIVATE WORKSPACE</div>
+        <h1>{done ? "You’re ready to sign in." : "Set your password."}</h1>
+        <p>
+          {done
+            ? "Your password has been saved. Sign in with your work email and new password."
+            : "Finish setting up your Fantasy Writing Bootcamp staff account."}
+        </p>
+        {callback.token && !done && (
+          <>
+            <label>
+              New password
+              <input
+                type="password"
+                autoComplete="new-password"
+                minLength={12}
+                maxLength={256}
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </label>
+            <label>
+              Confirm password
+              <input
+                type="password"
+                autoComplete="new-password"
+                minLength={12}
+                maxLength={256}
+                required
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
+              />
+            </label>
+          </>
+        )}
+        {error && <p role="alert">{error}</p>}
+        {done || !callback.token ? (
+          <button className="button" type="button" onClick={onDone}>
+            Go to sign in
+            <ArrowRight size={16} />
+          </button>
+        ) : (
+          <button className="button" type="submit" disabled={busy}>
+            {busy ? "Saving…" : "Save password"}
+            <ArrowRight size={16} />
+          </button>
+        )}
+        <small>
+          Use at least 12 characters. Account links are temporary; never share
+          their full URL.
+        </small>
+      </form>
+    </div>
+  );
+}
 function App() {
+  const [callback, setCallback] = useState(readAccountCallback);
   const [needsLogin, setNeedsLogin] = useState(false);
   const [data, setData] = useState(null),
     [error, setError] = useState(""),
@@ -167,7 +283,20 @@ function App() {
       .then(setData)
       .catch((e) => setError(e.message));
   };
-  useEffect(load, []);
+  useEffect(() => {
+    if (!callback) load();
+  }, [callback]);
+  if (callback)
+    return (
+      <AccountSetup
+        callback={callback}
+        onDone={() => {
+          setCallback(null);
+          setNeedsLogin(true);
+          window.history.replaceState(null, "", "/");
+        }}
+      />
+    );
   if (needsLogin)
     return (
       <SignIn

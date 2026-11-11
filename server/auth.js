@@ -83,6 +83,53 @@ export function installAuth(app, { db, required, allowlist, secure }) {
       res.status(503).json({ error: "Sign-in is temporarily unavailable." });
     }
   });
+  app.post("/api/account/password", validOrigin, async (req, res) => {
+    const token =
+      typeof req.body?.accessToken === "string" ? req.body.accessToken : "";
+    const password =
+      typeof req.body?.password === "string" ? req.body.password : "";
+    if (!db || !token)
+      return res
+        .status(401)
+        .json({
+          error:
+            "This setup link is missing or expired. Request a new password reset link.",
+        });
+    if (password.length < 12 || password.length > 256)
+      return res
+        .status(400)
+        .json({ error: "Use a password between 12 and 256 characters." });
+    try {
+      const { data, error } = await db.auth.getUser(token);
+      if (
+        error ||
+        !data.user?.id ||
+        !data.user.email_confirmed_at ||
+        !allowed.has(data.user.email?.toLowerCase())
+      )
+        return res
+          .status(401)
+          .json({
+            error:
+              "This setup link is invalid or the account is not authorized.",
+          });
+      const result = await db.auth.admin.updateUserById(data.user.id, {
+        password,
+      });
+      if (result.error)
+        return res
+          .status(400)
+          .json({
+            error:
+              "Unable to set this password. Try a different password or request a new setup link.",
+          });
+      res.set("Set-Cookie", cookie("", 0)).json({ ok: true });
+    } catch {
+      res
+        .status(503)
+        .json({ error: "Password setup is temporarily unavailable." });
+    }
+  });
   app.post("/api/logout", validOrigin, (req, res) =>
     res.set("Set-Cookie", cookie("", 0)).json({ ok: true }),
   );
